@@ -1,408 +1,410 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Boleto Conmemorativo</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Enlace a la hoja de estilos de Adobe Fonts para la fuente Gazzetta -->
-    <link rel="stylesheet" href="https://use.typekit.net/xza4qiy.css">
-    <style>
-        body {
-            font-family: 'gazzetta-variable', sans-serif;
-            font-variation-settings: 'wght' 400;
-            background-color: #80D8C2; /* Color verde esmeralda pastel */
-            color: #000;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Generador de Boleto Conmemorativo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 
-        /* Usamos 'gazzetta-variable' para que el título use la fuente correcta */
-        .gazzetta-medium-slanted {
-            font-family: 'gazzetta-variable', sans-serif;
-            font-variation-settings: 'wght' 400; /* Aplica el peso de la fuente */
-        }
+  <!-- Adobe Fonts (Typekit) -->
+  <link rel="preconnect" href="https://use.typekit.net" crossorigin>
+  <link rel="stylesheet" href="https://use.typekit.net/xza4qiy.css">
 
-        .ticket-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            margin: auto;
-        }
-        
-        #baseImage {
-            width: 100%;
-            height: auto;
-        }
-        
-        .shimmer {
-            background: linear-gradient(-45deg, rgba(255, 255, 255, 0) 40%, rgba(255, 165, 0, 0.4) 50%, rgba(255, 255, 255, 0) 60%);
-            background-size: 200% 200%;
-            animation: shimmer 2.5s infinite;
-        }
-        
-        @keyframes shimmer {
-            0% {
-                background-position: 100% 50%;
-            }
-            100% {
-                background-position: 0% 50%;
-            }
-        }
+  <style>
+    :root {
+      --gazzetta: "gazzetta-variable", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
 
-        .ticket-text {
-            position: absolute;
-            font-weight: bold;
-            color: #2e5950; /* Color verde más oscuro */
-            white-space: nowrap;
-            font-style: italic;
-            font-family: 'gazzetta-variable', sans-serif;
-            font-variation-settings: 'wght' 400;
-        }
-        
-        #previewContainer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            z-index: 100;
-        }
-        
-        #generatedTicketImage {
-            max-width: 90%;
-            max-height: 90%;
-            object-fit: contain; /* Evita que la imagen se estire */
-        }
-        
-        .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #fff;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+    html, body {
+      font-family: var(--gazzetta);
+      font-style: normal;
+      font-weight: 400;
+      font-synthesis: none; /* no simular bold/italic */
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background-color: #80D8C2; /* Verde esmeralda pastel */
+      color: #000;
+    }
 
-    </style>
+    .gazzetta-medium-slanted {
+      font-family: var(--gazzetta);
+      font-style: italic;
+      font-weight: 400; /* prueba 400/500/600 según look */
+    }
+
+    .ticket-container {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    #baseImage { width: 100%; height: auto; }
+
+    .shimmer {
+      background: linear-gradient(-45deg,
+        rgba(255,255,255,0) 40%,
+        rgba(255,165,0,0.4) 50%,
+        rgba(255,255,255,0) 60%);
+      background-size: 200% 200%;
+      animation: shimmer 2.5s infinite;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 100% 50%; }
+      100% { background-position: 0%   50%; }
+    }
+
+    .ticket-text {
+      position: absolute;
+      color: #2e5950;
+      white-space: nowrap;
+      font-family: var(--gazzetta);
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    #previewContainer {
+      position: fixed; inset: 0;
+      background-color: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 100;
+    }
+
+    #generatedTicketImage {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+    }
+
+    .loading-spinner {
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      width: 40px; height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
+
 <body class="bg-emerald-200 text-black min-h-screen flex flex-col items-center p-4">
 
-    <h1 class="text-3xl md:text-5xl gazzetta-medium-slanted text-center my-8">TS12 Release Party Ticket</h1>
+  <h1 class="text-3xl md:text-5xl gazzetta-medium-slanted text-center my-8">
+    TS12 Release Party Ticket
+  </h1>
 
-    <div class="w-full max-w-2xl bg-black bg-opacity-50 p-6 rounded-lg shadow-xl mb-8">
-        <div class="ticket-container">
-            <img id="baseImage" src="https://ts12swiftieschiapas.es/ticketgents12/boletovacio.webp" alt="Boleto base" class="w-full h-auto rounded-lg">
-            <div id="ticketOverlay"></div>
-        </div>
-
-        <div class="mt-8 space-y-4">
-            <div>
-                <label for="venue" class="block text-sm font-medium">Lugar</label>
-                <select id="venue" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2">
-                    <option value="" disabled selected>Selecciona un lugar</option>
-                    <option value="Cinepolis Poliforum">Cinepolis Poliforum</option>
-                    <option value="Cinepolis Plaza Sol">Cinepolis Plaza Sol</option>
-                    <option value="Cinepolis Paso Limón">Cinepolis Paso Limón</option>
-                    <option value="Cinemex Ambar">Cinemex Ambar</option>
-                    <option value="Cinemex Ambar Platino">Cinemex Ambar Platino</option>
-                    <option value="Cinemex Galerias">Cinemex Galerias</option>
-                    <option value="Otro">Otro</option>
-                </select>
-            </div>
-            <div id="otherVenueContainer" class="hidden">
-                <label for="otherVenue" class="block text-sm font-medium">Escribe el lugar</label>
-                <input type="text" id="otherVenue" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2" placeholder="Escribe aquí el lugar">
-            </div>
-
-            <div>
-                <label for="fecha" class="block text-sm font-medium">Fecha</label>
-                <select id="fecha" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2">
-                    <option value="" disabled selected>Selecciona una fecha</option>
-                    <option value="Oct 3">Oct 3</option>
-                    <option value="Oct 4">Oct 4</option>
-                    <option value="Oct 5">Oct 5</option>
-                </select>
-            </div>
-
-            <div class="grid grid-cols-3 gap-4">
-                <div>
-                    <label for="sala" class="block text-sm font-medium">Sala</label>
-                    <select id="sala" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2"></select>
-                </div>
-                <div>
-                    <label for="fila" class="block text-sm font-medium">Fila</label>
-                    <select id="fila" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2"></select>
-                </div>
-                <div>
-                    <label for="asiento" class="block text-sm font-medium">Asiento</label>
-                    <select id="asiento" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2"></select>
-                </div>
-            </div>
-
-            <button id="generateBtn" class="w-full mt-4 p-3 rounded-md bg-gray-500 text-white font-bold transition-colors duration-300 cursor-not-allowed" disabled>Generar</button>
-        </div>
+  <div class="w-full max-w-2xl bg-black bg-opacity-50 p-6 rounded-lg shadow-xl mb-8">
+    <div class="ticket-container">
+      <img id="baseImage" src="https://ts12swiftieschiapas.es/ticketgents12/boletovacio.webp" alt="Boleto base" class="w-full h-auto rounded-lg">
+      <div id="ticketOverlay"></div>
     </div>
 
-    <div id="previewContainer" class="hidden">
-        <h2 id="previewTitle" class="text-3xl text-white mb-4">Generando...</h2>
-        <div id="loadingSpinner" class="loading-spinner"></div>
-        <img id="generatedTicketImage" src="" alt="Boleto Generado" class="hidden">
-        <div id="previewButtons" class="flex space-x-4 mt-4 hidden">
-            <button id="downloadBtn" class="p-3 rounded-md bg-orange-600 hover:bg-orange-700 transition-colors duration-300 text-white font-bold">Descargar</button>
-            <button id="closePreviewBtn" class="p-3 rounded-md bg-orange-600 hover:bg-orange-700 transition-colors duration-300 text-white font-bold">Cerrar</button>
+    <div class="mt-8 space-y-4">
+      <div>
+        <label for="venue" class="block text-sm font-medium">Lugar</label>
+        <select id="venue" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2">
+          <option value="" disabled selected>Selecciona un lugar</option>
+          <option value="Cinepolis Poliforum">Cinepolis Poliforum</option>
+          <option value="Cinepolis Plaza Sol">Cinepolis Plaza Sol</option>
+          <option value="Cinepolis Paso Limón">Cinepolis Paso Limón</option>
+          <option value="Cinemex Ambar">Cinemex Ambar</option>
+          <option value="Cinemex Ambar Platino">Cinemex Ambar Platino</option>
+          <option value="Cinemex Galerias">Cinemex Galerias</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+
+      <div id="otherVenueContainer" class="hidden">
+        <label for="otherVenue" class="block text-sm font-medium">Escribe el lugar</label>
+        <input type="text" id="otherVenue" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2" placeholder="Escribe aquí el lugar">
+      </div>
+
+      <div>
+        <label for="fecha" class="block text-sm font-medium">Fecha</label>
+        <select id="fecha" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2">
+          <option value="" disabled selected>Selecciona una fecha</option>
+          <option value="OCT 3">OCT 3</option>
+          <option value="OCT 4">OCT 4</option>
+          <option value="OCT 5">OCT 5</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label for="sala" class="block text-sm font-medium">Sala</label>
+          <select id="sala" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2"></select>
         </div>
+        <div>
+          <label for="fila" class="block text-sm font-medium">Fila</label>
+          <select id="fila" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2"></select>
+        </div>
+        <div>
+          <label for="asiento" class="block text-sm font-medium">Asiento</label>
+          <select id="asiento" class="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white p-2"></select>
+        </div>
+      </div>
+
+      <button id="generateBtn" class="w-full mt-4 p-3 rounded-md bg-gray-500 text-white font-bold transition-colors duration-300 cursor-not-allowed" disabled>
+        Generar
+      </button>
     </div>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const venueSelect = document.getElementById('venue');
-            const otherVenueContainer = document.getElementById('otherVenueContainer');
-            const otherVenueInput = document.getElementById('otherVenue');
-            const fechaSelect = document.getElementById('fecha');
-            const salaSelect = document.getElementById('sala');
-            const filaSelect = document.getElementById('fila');
-            const asientoSelect = document.getElementById('asiento');
-            const generateBtn = document.getElementById('generateBtn');
-            const ticketOverlay = document.getElementById('ticketOverlay');
-            const baseImage = document.getElementById('baseImage');
+  </div>
 
-            const previewContainer = document.getElementById('previewContainer');
-            const previewTitle = document.getElementById('previewTitle');
-            const loadingSpinner = document.getElementById('loadingSpinner');
-            const generatedTicketImage = document.getElementById('generatedTicketImage');
-            const previewButtons = document.getElementById('previewButtons');
-            const downloadBtn = document.getElementById('downloadBtn');
-            const closePreviewBtn = document.getElementById('closePreviewBtn');
-            
-            let currentDownloadURL = '';
-            let fieldsFilled = 0;
+  <div id="previewContainer" class="hidden">
+    <h2 id="previewTitle" class="text-3xl text-white mb-4">Generando...</h2>
+    <div id="loadingSpinner" class="loading-spinner"></div>
+    <img id="generatedTicketImage" src="" alt="Boleto Generado" class="hidden">
+    <div id="previewButtons" class="flex space-x-4 mt-4 hidden">
+      <button id="downloadBtn" class="p-3 rounded-md bg-orange-600 hover:bg-orange-700 transition-colors duration-300 text-white font-bold">Descargar</button>
+      <button id="closePreviewBtn" class="p-3 rounded-md bg-orange-600 hover:bg-orange-700 transition-colors duration-300 text-white font-bold">Cerrar</button>
+    </div>
+  </div>
 
-            // Coordenadas FIJAS para la imagen final y la vista en tiempo real
-            const FINAL_AND_LIVE_COORDS = {
-                venue: { x: 1410.00, y: 407.00, rotate: -3, size: 37.00 },
-                fecha: { x: 1668.00, y: 581.60, size: 39.00 },
-                sala: { x: 1393.00, y: 854.00, size: 51.00 },
-                fila: { x: 1732.00, y: 859.00, size: 51.00 },
-                asiento: { x: 2132.00, y: 843.50, size: 56.00 },
-            };
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const venueSelect       = document.getElementById('venue');
+      const otherVenueContainer = document.getElementById('otherVenueContainer');
+      const otherVenueInput   = document.getElementById('otherVenue');
+      const fechaSelect       = document.getElementById('fecha');
+      const salaSelect        = document.getElementById('sala');
+      const filaSelect        = document.getElementById('fila');
+      const asientoSelect     = document.getElementById('asiento');
+      const generateBtn       = document.getElementById('generateBtn');
+      const ticketOverlay     = document.getElementById('ticketOverlay');
+      const baseImage         = document.getElementById('baseImage');
 
-            // Dimensiones de la imagen base para cálculos
-            const IMAGE_WIDTH = 2407.9745;
-            const IMAGE_HEIGHT = 1247.7159;
-            
-            // Populate dropdowns
-            for (let i = 1; i <= 30; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = i;
-                salaSelect.appendChild(option);
-            }
+      const previewContainer  = document.getElementById('previewContainer');
+      const previewTitle      = document.getElementById('previewTitle');
+      const loadingSpinner    = document.getElementById('loadingSpinner');
+      const generatedTicketImage = document.getElementById('generatedTicketImage');
+      const previewButtons    = document.getElementById('previewButtons');
+      const downloadBtn       = document.getElementById('downloadBtn');
+      const closePreviewBtn   = document.getElementById('closePreviewBtn');
 
-            for (let i = 0; i < 26; i++) {
-                const letter = String.fromCharCode(65 + i);
-                const option = document.createElement('option');
-                option.value = letter;
-                option.textContent = letter;
-                filaSelect.appendChild(option);
-            }
+      let currentDownloadURL = '';
+      let fieldsFilled = 0;
 
-            for (let i = 0; i <= 40; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = i;
-                asientoSelect.appendChild(option);
-            }
+      // Coordenadas para imagen final y vista en vivo (basadas en tamaño original)
+      const FINAL_AND_LIVE_COORDS = {
+        venue:   { x: 1410.00, y: 407.00, rotate: -3, size: 37.00 },
+        fecha:   { x: 1668.00, y: 581.60, size: 39.00 },
+        sala:    { x: 1393.00, y: 854.00, size: 51.00 },
+        fila:    { x: 1732.00, y: 859.00, size: 51.00 },
+        asiento: { x: 2132.00, y: 843.50, size: 56.00 },
+      };
 
-            // Show/hide "Otro" venue field
-            venueSelect.addEventListener('change', (e) => {
-                if (e.target.value === 'Otro') {
-                    otherVenueContainer.classList.remove('hidden');
-                } else {
-                    otherVenueContainer.classList.add('hidden');
-                }
-                updateTicketPreview();
-                checkForm();
-            });
+      const IMAGE_WIDTH  = 2407.9745;
+      const IMAGE_HEIGHT = 1247.7159;
 
-            // Update ticket preview on input change
-            [venueSelect, otherVenueInput, fechaSelect, salaSelect, filaSelect, asientoSelect].forEach(element => {
-                element.addEventListener('input', () => {
-                    updateTicketPreview();
-                    checkForm();
-                });
-            });
+      // Poblar selects
+      for (let i = 1; i <= 30; i++) {
+        const op = document.createElement('option');
+        op.value = i; op.textContent = i;
+        salaSelect.appendChild(op);
+      }
 
-            function updateTicketPreview() {
-                const venueValue = venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value;
-                const ticketData = {
-                    venue: venueValue.toUpperCase(),
-                    fecha: fechaSelect.value.toUpperCase().replace('OCT', 'OCTUBRE'),
-                    sala: salaSelect.value.toUpperCase(),
-                    fila: filaSelect.value.toUpperCase(),
-                    asiento: asientoSelect.value.toUpperCase(),
-                };
+      for (let i = 0; i < 26; i++) {
+        const letter = String.fromCharCode(65 + i);
+        const op = document.createElement('option');
+        op.value = letter; op.textContent = letter;
+        filaSelect.appendChild(op);
+      }
 
-                // Clear previous text
-                ticketOverlay.innerHTML = '';
-                fieldsFilled = 0;
+      for (let i = 0; i <= 40; i++) {
+        const op = document.createElement('option');
+        op.value = i; op.textContent = i;
+        asientoSelect.appendChild(op);
+      }
 
-                for (const key in ticketData) {
-                    if (ticketData[key]) {
-                        fieldsFilled++;
-                        const textElement = document.createElement('div');
-                        textElement.textContent = ticketData[key];
-                        textElement.style.position = 'absolute';
-                        textElement.style.color = '#2e5950';
-                        textElement.style.fontFamily = 'gazzetta-variable, sans-serif';
-                        textElement.style.fontVariationSettings = `'wght' 400`;
-                        textElement.style.whiteSpace = 'nowrap';
-                        textElement.style.fontStyle = 'normal';
-                        
-                        // Posiciones en porcentajes para la vista en tiempo real (adaptable)
-                        const x = (FINAL_AND_LIVE_COORDS[key].x / IMAGE_WIDTH) * 100;
-                        const y = (FINAL_AND_LIVE_COORDS[key].y / IMAGE_HEIGHT) * 100;
-                        const size = (FINAL_AND_LIVE_COORDS[key].size / IMAGE_WIDTH) * 100;
+      // Mostrar/ocultar campo "Otro"
+      venueSelect.addEventListener('change', (e) => {
+        if (e.target.value === 'Otro') {
+          otherVenueContainer.classList.remove('hidden');
+        } else {
+          otherVenueContainer.classList.add('hidden');
+        }
+        updateTicketPreview();
+        checkForm();
+      });
 
-                        textElement.style.left = `${x}%`;
-                        textElement.style.top = `${y}%`;
-                        textElement.style.fontSize = `${size}vw`;
-
-                        if (FINAL_AND_LIVE_COORDS[key].rotate) {
-                           textElement.style.transform = `rotate(${FINAL_AND_LIVE_COORDS[key].rotate}deg)`;
-                        }
-
-                        ticketOverlay.appendChild(textElement);
-                    }
-                }
-
-                if (fieldsFilled > 0) {
-                    baseImage.classList.add('shimmer');
-                } else {
-                    baseImage.classList.remove('shimmer');
-                }
-            }
-            
-            // Enable/disable generate button
-            function checkForm() {
-                const venueValue = venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value;
-                const isFormComplete = venueValue && fechaSelect.value && salaSelect.value && filaSelect.value && asientoSelect.value;
-                
-                if (isFormComplete) {
-                    generateBtn.disabled = false;
-                    generateBtn.classList.remove('bg-gray-500', 'cursor-not-allowed');
-                    generateBtn.classList.add('bg-orange-600', 'hover:bg-orange-700', 'cursor-pointer');
-                } else {
-                    generateBtn.disabled = true;
-                    generateBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
-                    generateBtn.classList.remove('bg-orange-600', 'hover:bg-orange-700', 'cursor-pointer');
-                }
-            }
-            
-            async function createTicketImage() {
-                const canvas = document.createElement('canvas');
-                const img = new Image();
-                img.crossOrigin = 'anonymous'; // Important for CORS if using external image URLs
-                
-                return new Promise((resolve, reject) => {
-                    img.onload = () => {
-                        const originalWidth = img.width;
-                        const originalHeight = img.height;
-                        canvas.width = originalWidth;
-                        canvas.height = originalHeight;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        
-                        // Set text properties
-                        ctx.font = `italic bold 45px Gazzetta-Variable, sans-serif`;
-                        ctx.fillStyle = '#2e5950';
-                        ctx.textAlign = 'left';
-
-                        const textElements = [
-                            { text: (venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value).toUpperCase(), x: 822, y: 251, rotate: -3 },
-                            { text: fechaSelect.value.toUpperCase().replace('OCT', 'OCTUBRE'), x: 957, y: 335.6 },
-                            { text: salaSelect.value.toUpperCase(), x: 799, y: 491 },
-                            { text: filaSelect.value.toUpperCase(), x: 988, y: 490 },
-                            { text: asientoSelect.value.toUpperCase(), x: 1226, y: 495.5 },
-                        ];
-
-                        textElements.forEach(item => {
-                            ctx.save();
-                            ctx.translate(item.x, item.y);
-                            if (item.rotate) {
-                                ctx.rotate(item.rotate * Math.PI / 180);
-                            }
-                            ctx.fillText(item.text, 0, 0);
-                            ctx.restore();
-                        });
-
-                        resolve(canvas.toDataURL('image/jpeg', 0.9)); // Convert to JPG with 90% quality
-                    };
-                    img.onerror = (e) => {
-                        console.error('Error al cargar la imagen base:', e);
-                        reject(new Error('No se pudo cargar la imagen base.'));
-                    };
-                    img.src = "https://i.ibb.co/232Vhy8n/Artboard-2.webp";
-                });
-            }
-
-            // Generate button click
-            generateBtn.addEventListener('click', async () => {
-                // Show loading state
-                previewContainer.style.display = 'flex';
-                previewTitle.textContent = 'Generando...';
-                loadingSpinner.classList.remove('hidden');
-                generatedTicketImage.classList.add('hidden');
-                previewButtons.classList.add('hidden');
-                
-                try {
-                    const ticketDataURL = await createTicketImage();
-                    currentDownloadURL = ticketDataURL;
-                    generatedTicketImage.src = ticketDataURL;
-                    
-                    // Hide loading and show generated image
-                    previewTitle.textContent = 'Vista Previa';
-                    loadingSpinner.classList.add('hidden');
-                    generatedTicketImage.classList.remove('hidden');
-                    previewButtons.classList.remove('hidden');
-
-                } catch (error) {
-                    console.error('Error al generar el boleto:', error.message);
-                    previewTitle.textContent = 'Error';
-                    loadingSpinner.classList.add('hidden');
-                }
-            });
-
-            // Download button click
-            downloadBtn.addEventListener('click', (event) => {
-                event.preventDefault(); 
-                if (currentDownloadURL) {
-                    const link = document.createElement('a');
-                    link.href = currentDownloadURL;
-                    link.download = 'boletoswiftieschiapas.jpg'; // Save as JPG
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }
-            });
-
-            // Close preview
-            closePreviewBtn.addEventListener('click', () => {
-                previewContainer.style.display = 'none';
-            });
-
-            // Initial checks
-            updateTicketPreview();
-            checkForm();
+      // Actualizar vista previa en vivo
+      [venueSelect, otherVenueInput, fechaSelect, salaSelect, filaSelect, asientoSelect].forEach(el => {
+        el.addEventListener('input', () => {
+          updateTicketPreview();
+          checkForm();
         });
-    </script>
+      });
+
+      function updateTicketPreview() {
+        const venueValue = venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value;
+        const ticketData = {
+          venue:   (venueValue || '').toUpperCase(),
+          fecha:   (fechaSelect.value || '').toUpperCase().replace('OCT', 'OCTUBRE'),
+          sala:    (salaSelect.value || '').toUpperCase(),
+          fila:    (filaSelect.value || '').toUpperCase(),
+          asiento: (asientoSelect.value || '').toUpperCase(),
+        };
+
+        ticketOverlay.innerHTML = '';
+        fieldsFilled = 0;
+
+        for (const key in ticketData) {
+          if (ticketData[key]) {
+            fieldsFilled++;
+            const el = document.createElement('div');
+            el.textContent = ticketData[key];
+            el.className = 'ticket-text';
+
+            // Posiciones responsivas (porcentajes respecto a imagen original)
+            const xPct = (FINAL_AND_LIVE_COORDS[key].x / IMAGE_WIDTH) * 100;
+            const yPct = (FINAL_AND_LIVE_COORDS[key].y / IMAGE_HEIGHT) * 100;
+            const sizeVw = (FINAL_AND_LIVE_COORDS[key].size / IMAGE_WIDTH) * 100;
+
+            el.style.left = `${xPct}%`;
+            el.style.top = `${yPct}%`;
+            el.style.fontSize = `${sizeVw}vw`;
+            el.style.transformOrigin = 'left top';
+
+            // Estilo/peso coherentes con el kit
+            el.style.fontFamily = 'gazzetta-variable, system-ui, sans-serif';
+            el.style.fontStyle  = 'italic';
+            el.style.fontWeight = '400';
+
+            if (FINAL_AND_LIVE_COORDS[key].rotate) {
+              el.style.transform = `rotate(${FINAL_AND_LIVE_COORDS[key].rotate}deg)`;
+            }
+
+            ticketOverlay.appendChild(el);
+          }
+        }
+
+        if (fieldsFilled > 0) baseImage.classList.add('shimmer');
+        else baseImage.classList.remove('shimmer');
+      }
+
+      function checkForm() {
+        const venueValue = venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value;
+        const complete = venueValue && fechaSelect.value && salaSelect.value && filaSelect.value && asientoSelect.value;
+        if (complete) {
+          generateBtn.disabled = false;
+          generateBtn.classList.remove('bg-gray-500', 'cursor-not-allowed');
+          generateBtn.classList.add('bg-orange-600', 'hover:bg-orange-700', 'cursor-pointer');
+        } else {
+          generateBtn.disabled = true;
+          generateBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
+          generateBtn.classList.remove('bg-orange-600', 'hover:bg-orange-700', 'cursor-pointer');
+        }
+      }
+
+      // Esperar fuente de Adobe antes de pintar en canvas
+      async function ensureGazzettaLoaded() {
+        try {
+          // Ajusta tamaño/peso a lo que uses en canvas
+          await document.fonts.load('italic 400 45px "gazzetta-variable"');
+          await document.fonts.ready;
+        } catch (e) {
+          console.warn('No se pudo confirmar la carga de la fuente. Continuo.', e);
+        }
+      }
+
+      async function createTicketImage() {
+        await ensureGazzettaLoaded();
+
+        const canvas = document.createElement('canvas');
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = "https://i.ibb.co/232Vhy8n/Artboard-2.webp";
+
+        return new Promise((resolve, reject) => {
+          img.onload = () => {
+            const originalWidth = img.width;
+            const originalHeight = img.height;
+            canvas.width = originalWidth;
+            canvas.height = originalHeight;
+            const ctx = canvas.getContext('2d');
+
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            const venueValue = (venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value).toUpperCase();
+            const fechaValue = (fechaSelect.value || '').toUpperCase().replace('OCT', 'OCTUBRE');
+            const salaValue = (salaSelect.value || '').toUpperCase();
+            const filaValue = (filaSelect.value || '').toUpperCase();
+            const asientoValue = (asientoSelect.value || '').toUpperCase();
+
+            const textElements = [
+              { text: venueValue,   x: 822,  y: 251,   rotate: -3, size: 45 },
+              { text: fechaValue,   x: 957,  y: 335.6,            size: 45 },
+              { text: salaValue,    x: 799,  y: 491,              size: 51 },
+              { text: filaValue,    x: 988,  y: 490,              size: 51 },
+              { text: asientoValue, x: 1226, y: 495.5,            size: 56 },
+            ];
+
+            ctx.fillStyle = '#2e5950';
+            ctx.textAlign = 'left';
+
+            textElements.forEach(item => {
+              ctx.save();
+              // Usa EXACTO el mismo nombre de familia del kit
+              ctx.font = `italic 400 ${item.size}px "gazzetta-variable", system-ui, sans-serif`;
+              ctx.translate(item.x, item.y);
+              if (item.rotate) ctx.rotate(item.rotate * Math.PI / 180);
+              ctx.fillText(item.text, 0, 0);
+              ctx.restore();
+            });
+
+            resolve(canvas.toDataURL('image/jpeg', 0.9));
+          };
+          img.onerror = () => reject(new Error('No se pudo cargar la imagen base.'));
+        });
+      }
+
+      // Botón Generar
+      generateBtn.addEventListener('click', async () => {
+        previewContainer.style.display = 'flex';
+        previewTitle.textContent = 'Generando...';
+        loadingSpinner.classList.remove('hidden');
+        generatedTicketImage.classList.add('hidden');
+        previewButtons.classList.add('hidden');
+
+        try {
+          const ticketDataURL = await createTicketImage();
+          currentDownloadURL = ticketDataURL;
+          generatedTicketImage.src = ticketDataURL;
+
+          previewTitle.textContent = 'Vista Previa';
+          loadingSpinner.classList.add('hidden');
+          generatedTicketImage.classList.remove('hidden');
+          previewButtons.classList.remove('hidden');
+        } catch (err) {
+          console.error('Error al generar el boleto:', err);
+          previewTitle.textContent = 'Error';
+          loadingSpinner.classList.add('hidden');
+        }
+      });
+
+      downloadBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (currentDownloadURL) {
+          const a = document.createElement('a');
+          a.href = currentDownloadURL;
+          a.download = 'boletoswiftieschiapas.jpg';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        }
+      });
+
+      closePreviewBtn.addEventListener('click', () => {
+        previewContainer.style.display = 'none';
+      });
+
+      // Inicial
+      updateTicketPreview();
+      checkForm();
+    });
+  </script>
 </body>
 </html>
