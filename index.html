@@ -18,7 +18,8 @@
 
         body {
             font-family: 'Gazzetta-Custom', sans-serif;
-            font-variation-settings: 'wght' 300;
+            font-variation-settings: 'wght' 250; /* Ajusta manualmente el peso si deseas un trazo más fino o grueso */
+            font-size: 18px; /* Ajusta manualmente el tamaño si quieres un cuerpo más pequeño/grande */
             background-color: #80D8C2; /* Color verde esmeralda pastel */
             color: #000;
         }
@@ -217,21 +218,23 @@
             
             // Coordenadas ACTUALIZADAS para la IMAGEN FINAL GENERADA (ajustadas a la nueva resolución 1378x647)
             // Hemos usado el punto de inicio del mapa de imagen más un pequeño ajuste vertical/horizontal
+            const FINAL_FONT_SCALE = 2.35; // Ajusta manualmente este factor para cambiar el tamaño final del texto en la imagen
+            const LIVE_FONT_SCALE = 0.92; // Ajusta manualmente este factor si quieres que la vista previa sea más grande o más pequeña
             const FINAL_COORDS = {
                 // Basado en coords="813, 227" de la imagen 1378x647, con ajuste de posición y tamaño x2
-                venue: { x: 813 + 10, y: 227 + 5, rotate: -3, size: 37.00 * 2.5 }, 
-                
+                venue: { x: 813 + 10, y: 227 + 5, rotate: -3, size: 37.00 * FINAL_FONT_SCALE },
+
                 // Basado en coords="954, 311"
-                fecha: { x: 954 + 10, y: 311 + 5, rotate: 0, size: 39.00 * 2.5 }, 
-                
+                fecha: { x: 954 + 10, y: 311 + 5, rotate: 0, size: 39.00 * FINAL_FONT_SCALE },
+
                 // Basado en coords="802, 461"
-                sala: { x: 802 + 5, y: 461 + 10, rotate: 0, size: 51.00 * 2.5 }, 
-                
+                sala: { x: 802 + 5, y: 461 + 10, rotate: 0, size: 51.00 * FINAL_FONT_SCALE },
+
                 // Basado en coords="995, 459"
-                fila: { x: 995 + 5, y: 459 + 10, rotate: 0, size: 51.00 * 2.5 }, 
-                
+                fila: { x: 995 + 5, y: 459 + 10, rotate: 0, size: 51.00 * FINAL_FONT_SCALE },
+
                 // Basado en coords="1229, 461"
-                asiento: { x: 1229 + 5, y: 461 + 10, rotate: 0, size: 56.00 * 2.5 },
+                asiento: { x: 1229 + 5, y: 461 + 10, rotate: 0, size: 56.00 * FINAL_FONT_SCALE },
             };
 
 
@@ -307,7 +310,7 @@
                         // CÁLCULO DE POSICIÓN Y TAMAÑO EN UNIDADES RESPONSIVAS (VW, %) usando LIVE_COORDS
                         const x = (LIVE_COORDS[key].x / ORIGINAL_IMAGE_WIDTH) * 100;
                         const y = (LIVE_COORDS[key].y / ORIGINAL_IMAGE_HEIGHT) * 100;
-                        const size = (LIVE_COORDS[key].size / ORIGINAL_IMAGE_WIDTH) * 100; 
+                        const size = (LIVE_COORDS[key].size / ORIGINAL_IMAGE_WIDTH) * 100 * LIVE_FONT_SCALE;
 
                         textElement.style.left = `${x}%`;
                         textElement.style.top = `${y}%`;
