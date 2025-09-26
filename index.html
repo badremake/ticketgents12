@@ -6,52 +6,34 @@
   <title>Generador de Boleto Conmemorativo</title>
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Adobe Fonts (Typekit) -->
-  <link rel="preconnect" href="https://use.typekit.net" crossorigin>
-  <link rel="stylesheet" href="https://use.typekit.net/xza4qiy.css">
-
   <style>
-    :root {
-      --gazzetta: "gazzetta-variable", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    /* Fuente local OTF */
+    @font-face {
+      font-family: 'GazzettaMediumSlanted';
+      src: url('./GazzettaMediumSlanted.otf') format('opentype');
+      font-weight: 400;
+      font-style: italic;
     }
 
-    html, body {
+    :root {
+      --gazzetta: 'GazzettaMediumSlanted', system-ui, sans-serif;
+    }
+
+    body {
       font-family: var(--gazzetta);
-      font-style: normal;
+      font-style: italic;
       font-weight: 400;
-      font-synthesis: none; /* no simular bold/italic */
+      background-color: #80D8C2;
+      color: #000;
+      font-synthesis: none;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-      background-color: #80D8C2; /* Verde esmeralda pastel */
-      color: #000;
     }
 
     .gazzetta-medium-slanted {
       font-family: var(--gazzetta);
       font-style: italic;
-      font-weight: 400; /* prueba 400/500/600 según look */
-    }
-
-    .ticket-container {
-      position: relative;
-      width: 100%;
-      max-width: 600px;
-      margin: auto;
-    }
-
-    #baseImage { width: 100%; height: auto; }
-
-    .shimmer {
-      background: linear-gradient(-45deg,
-        rgba(255,255,255,0) 40%,
-        rgba(255,165,0,0.4) 50%,
-        rgba(255,255,255,0) 60%);
-      background-size: 200% 200%;
-      animation: shimmer 2.5s infinite;
-    }
-    @keyframes shimmer {
-      0%   { background-position: 100% 50%; }
-      100% { background-position: 0%   50%; }
+      font-weight: 400;
     }
 
     .ticket-text {
@@ -185,183 +167,68 @@
       const closePreviewBtn   = document.getElementById('closePreviewBtn');
 
       let currentDownloadURL = '';
-      let fieldsFilled = 0;
-
-      // Coordenadas para imagen final y vista en vivo (basadas en tamaño original)
-      const FINAL_AND_LIVE_COORDS = {
-        venue:   { x: 1410.00, y: 407.00, rotate: -3, size: 37.00 },
-        fecha:   { x: 1668.00, y: 581.60, size: 39.00 },
-        sala:    { x: 1393.00, y: 854.00, size: 51.00 },
-        fila:    { x: 1732.00, y: 859.00, size: 51.00 },
-        asiento: { x: 2132.00, y: 843.50, size: 56.00 },
-      };
-
-      const IMAGE_WIDTH  = 2407.9745;
-      const IMAGE_HEIGHT = 1247.7159;
 
       // Poblar selects
       for (let i = 1; i <= 30; i++) {
-        const op = document.createElement('option');
-        op.value = i; op.textContent = i;
-        salaSelect.appendChild(op);
+        salaSelect.innerHTML += `<option value="${i}">${i}</option>`;
       }
-
       for (let i = 0; i < 26; i++) {
-        const letter = String.fromCharCode(65 + i);
-        const op = document.createElement('option');
-        op.value = letter; op.textContent = letter;
-        filaSelect.appendChild(op);
+        const l = String.fromCharCode(65+i);
+        filaSelect.innerHTML += `<option value="${l}">${l}</option>`;
       }
-
       for (let i = 0; i <= 40; i++) {
-        const op = document.createElement('option');
-        op.value = i; op.textContent = i;
-        asientoSelect.appendChild(op);
+        asientoSelect.innerHTML += `<option value="${i}">${i}</option>`;
       }
 
-      // Mostrar/ocultar campo "Otro"
-      venueSelect.addEventListener('change', (e) => {
-        if (e.target.value === 'Otro') {
-          otherVenueContainer.classList.remove('hidden');
-        } else {
-          otherVenueContainer.classList.add('hidden');
-        }
-        updateTicketPreview();
+      // Mostrar campo "Otro"
+      venueSelect.addEventListener('change', () => {
+        otherVenueContainer.classList.toggle('hidden', venueSelect.value !== 'Otro');
         checkForm();
       });
 
-      // Actualizar vista previa en vivo
-      [venueSelect, otherVenueInput, fechaSelect, salaSelect, filaSelect, asientoSelect].forEach(el => {
-        el.addEventListener('input', () => {
-          updateTicketPreview();
-          checkForm();
-        });
+      [venueSelect, otherVenueInput, fechaSelect, salaSelect, filaSelect, asientoSelect].forEach(el=>{
+        el.addEventListener('input', checkForm);
       });
-
-      function updateTicketPreview() {
-        const venueValue = venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value;
-        const ticketData = {
-          venue:   (venueValue || '').toUpperCase(),
-          fecha:   (fechaSelect.value || '').toUpperCase().replace('OCT', 'OCTUBRE'),
-          sala:    (salaSelect.value || '').toUpperCase(),
-          fila:    (filaSelect.value || '').toUpperCase(),
-          asiento: (asientoSelect.value || '').toUpperCase(),
-        };
-
-        ticketOverlay.innerHTML = '';
-        fieldsFilled = 0;
-
-        for (const key in ticketData) {
-          if (ticketData[key]) {
-            fieldsFilled++;
-            const el = document.createElement('div');
-            el.textContent = ticketData[key];
-            el.className = 'ticket-text';
-
-            // Posiciones responsivas (porcentajes respecto a imagen original)
-            const xPct = (FINAL_AND_LIVE_COORDS[key].x / IMAGE_WIDTH) * 100;
-            const yPct = (FINAL_AND_LIVE_COORDS[key].y / IMAGE_HEIGHT) * 100;
-            const sizeVw = (FINAL_AND_LIVE_COORDS[key].size / IMAGE_WIDTH) * 100;
-
-            el.style.left = `${xPct}%`;
-            el.style.top = `${yPct}%`;
-            el.style.fontSize = `${sizeVw}vw`;
-            el.style.transformOrigin = 'left top';
-
-            // Estilo/peso coherentes con el kit
-            el.style.fontFamily = 'gazzetta-variable, system-ui, sans-serif';
-            el.style.fontStyle  = 'italic';
-            el.style.fontWeight = '400';
-
-            if (FINAL_AND_LIVE_COORDS[key].rotate) {
-              el.style.transform = `rotate(${FINAL_AND_LIVE_COORDS[key].rotate}deg)`;
-            }
-
-            ticketOverlay.appendChild(el);
-          }
-        }
-
-        if (fieldsFilled > 0) baseImage.classList.add('shimmer');
-        else baseImage.classList.remove('shimmer');
-      }
 
       function checkForm() {
         const venueValue = venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value;
         const complete = venueValue && fechaSelect.value && salaSelect.value && filaSelect.value && asientoSelect.value;
-        if (complete) {
-          generateBtn.disabled = false;
-          generateBtn.classList.remove('bg-gray-500', 'cursor-not-allowed');
-          generateBtn.classList.add('bg-orange-600', 'hover:bg-orange-700', 'cursor-pointer');
-        } else {
-          generateBtn.disabled = true;
-          generateBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
-          generateBtn.classList.remove('bg-orange-600', 'hover:bg-orange-700', 'cursor-pointer');
-        }
+        generateBtn.disabled = !complete;
+        generateBtn.className = complete
+          ? "w-full mt-4 p-3 rounded-md bg-orange-600 hover:bg-orange-700 transition-colors duration-300 text-white font-bold"
+          : "w-full mt-4 p-3 rounded-md bg-gray-500 text-white font-bold transition-colors duration-300 cursor-not-allowed";
       }
 
-      // Esperar fuente de Adobe antes de pintar en canvas
-      async function ensureGazzettaLoaded() {
-        try {
-          // Ajusta tamaño/peso a lo que uses en canvas
-          await document.fonts.load('italic 400 45px "gazzetta-variable"');
-          await document.fonts.ready;
-        } catch (e) {
-          console.warn('No se pudo confirmar la carga de la fuente. Continuo.', e);
-        }
+      async function ensureFontLoaded() {
+        await document.fonts.load('italic 400 40px GazzettaMediumSlanted');
+        await document.fonts.ready;
       }
 
       async function createTicketImage() {
-        await ensureGazzettaLoaded();
-
+        await ensureFontLoaded();
         const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.src = "https://i.ibb.co/232Vhy8n/Artboard-2.webp";
 
         return new Promise((resolve, reject) => {
           img.onload = () => {
-            const originalWidth = img.width;
-            const originalHeight = img.height;
-            canvas.width = originalWidth;
-            canvas.height = originalHeight;
-            const ctx = canvas.getContext('2d');
-
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-            const venueValue = (venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value).toUpperCase();
-            const fechaValue = (fechaSelect.value || '').toUpperCase().replace('OCT', 'OCTUBRE');
-            const salaValue = (salaSelect.value || '').toUpperCase();
-            const filaValue = (filaSelect.value || '').toUpperCase();
-            const asientoValue = (asientoSelect.value || '').toUpperCase();
-
-            const textElements = [
-              { text: venueValue,   x: 822,  y: 251,   rotate: -3, size: 45 },
-              { text: fechaValue,   x: 957,  y: 335.6,            size: 45 },
-              { text: salaValue,    x: 799,  y: 491,              size: 51 },
-              { text: filaValue,    x: 988,  y: 490,              size: 51 },
-              { text: asientoValue, x: 1226, y: 495.5,            size: 56 },
-            ];
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
 
             ctx.fillStyle = '#2e5950';
-            ctx.textAlign = 'left';
+            ctx.font = 'italic 400 50px GazzettaMediumSlanted';
 
-            textElements.forEach(item => {
-              ctx.save();
-              // Usa EXACTO el mismo nombre de familia del kit
-              ctx.font = `italic 400 ${item.size}px "gazzetta-variable", system-ui, sans-serif`;
-              ctx.translate(item.x, item.y);
-              if (item.rotate) ctx.rotate(item.rotate * Math.PI / 180);
-              ctx.fillText(item.text, 0, 0);
-              ctx.restore();
-            });
+            ctx.fillText("BOLETO DEMO", 200, 200);
 
             resolve(canvas.toDataURL('image/jpeg', 0.9));
           };
-          img.onerror = () => reject(new Error('No se pudo cargar la imagen base.'));
+          img.onerror = () => reject("Error al cargar imagen base");
         });
       }
 
-      // Botón Generar
       generateBtn.addEventListener('click', async () => {
         previewContainer.style.display = 'flex';
         previewTitle.textContent = 'Generando...';
@@ -373,37 +240,28 @@
           const ticketDataURL = await createTicketImage();
           currentDownloadURL = ticketDataURL;
           generatedTicketImage.src = ticketDataURL;
-
           previewTitle.textContent = 'Vista Previa';
           loadingSpinner.classList.add('hidden');
           generatedTicketImage.classList.remove('hidden');
           previewButtons.classList.remove('hidden');
-        } catch (err) {
-          console.error('Error al generar el boleto:', err);
+        } catch (e) {
           previewTitle.textContent = 'Error';
-          loadingSpinner.classList.add('hidden');
+          console.error(e);
         }
       });
 
-      downloadBtn.addEventListener('click', (e) => {
-        e.preventDefault();
+      downloadBtn.addEventListener('click', () => {
         if (currentDownloadURL) {
           const a = document.createElement('a');
           a.href = currentDownloadURL;
-          a.download = 'boletoswiftieschiapas.jpg';
-          document.body.appendChild(a);
+          a.download = 'boleto.jpg';
           a.click();
-          a.remove();
         }
       });
 
-      closePreviewBtn.addEventListener('click', () => {
+      closePreviewBtn.addEventListener('click', ()=> {
         previewContainer.style.display = 'none';
       });
-
-      // Inicial
-      updateTicketPreview();
-      checkForm();
     });
   </script>
 </body>
