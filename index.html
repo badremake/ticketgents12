@@ -7,12 +7,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- CARGA DE FUENTE PERSONALIZADA -->
-    <!-- Asume que el archivo GazzettaMediumSlanted.otf está en el root de tu servidor. -->
     <style>
         @font-face {
             font-family: 'Gazzetta-Custom';
-            src: url('./GazzettaMediumSlanted.otf') format('opentype');
-            /* Agrega 'format('woff')' si tienes un archivo .woff para mejor compatibilidad */
+            /* RUTA LOCAL PARA DESARROLLO: Asume que el archivo GazzettaMediumSlanted.otf está en el root de tu servidor. */
+            src: url('/GazzettaMediumSlanted.otf') format('opentype'); 
             font-weight: 400;
             font-style: normal;
         }
@@ -40,13 +39,6 @@
         #baseImage {
             width: 100%;
             height: auto;
-            display: block;
-        }
-
-        #ticketOverlay {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
         }
         
         .shimmer {
@@ -72,6 +64,8 @@
             font-style: normal;
             font-family: 'Gazzetta-Custom', sans-serif;
             font-variation-settings: 'wght' 400;
+            transform-origin: left top; 
+            /* Las coordenadas se aplicarán directamente en JavaScript para precisión */
         }
         
         #previewContainer {
@@ -112,12 +106,13 @@
 </head>
 <body class="bg-emerald-200 text-black min-h-screen flex flex-col items-center p-4">
 
-    <h1 class="text-3xl md:text-5xl gazzetta-medium-slanted text-center my-8">TS12 RELEASE PARTY TICKET </h1>
+    <h1 class="text-3xl md:text-5xl gazzetta-medium-slanted text-center my-8">TS12 Release Party Ticket</h1>
 
     <div class="w-full max-w-2xl bg-black bg-opacity-50 p-6 rounded-lg shadow-xl mb-8">
         <div class="ticket-container">
-            <!-- RUTA DE IMAGEN ALINEADA CON EL CÓDIGO LOCAL DEL USUARIO -->
-            <img id="baseImage" src="./boletovacio.webp" alt="Boleto base" class="w-full h-auto rounded-lg" crossorigin="anonymous">
+            <!-- RUTA PARA USO EN DESARROLLO (IMAGEN DE IMAGUR CON CORS AMIGABLE) -->
+            <!-- Usamos Imgur para desarrollo, pero las coordenadas son para 1378x647 -->
+            <img id="baseImage" src="https://i.imgur.com/fwAcs1Q.jpeg" alt="Boleto base" class="w-full h-auto rounded-lg" crossorigin="anonymous">
             <div id="ticketOverlay"></div>
         </div>
 
@@ -203,18 +198,43 @@
             let currentDownloadURL = '';
             let fieldsFilled = 0;
 
-            // Coordenadas fijas de la imagen final (en pixeles relativos al archivo base)
-            const TICKET_LAYOUT = {
-                venue: { x: 1410.0, y: 407.0, rotate: -3, size: 45.0 },
-                fecha: { x: 1668.0, y: 581.6, rotate: 0, size: 45.0 },
-                sala: { x: 1393.0, y: 854.0, rotate: 0, size: 55.0 },
-                fila: { x: 1732.0, y: 859.0, rotate: 0, size: 55.0 },
-                asiento: { x: 2132.0, y: 843.5, rotate: 0, size: 60.0 },
+            // Dimensiones ORIGINALES de la imagen base (se usan para el cálculo de porcentaje en la vista en tiempo real)
+            const ORIGINAL_IMAGE_WIDTH = 2407.9745;
+            const ORIGINAL_IMAGE_HEIGHT = 1247.7159;
+
+            // Dimensiones REALES de la imagen final (para el Canvas)
+            const FINAL_IMAGE_WIDTH = 1378; 
+            const FINAL_IMAGE_HEIGHT = 647; 
+
+            // Coordenadas para la VISTA EN TIEMPO REAL (basado en la proporción original)
+            const LIVE_COORDS = {
+                venue: { x: 1410.00, y: 407.00, rotate: -3, size: 37.00 },
+                fecha: { x: 1668.00, y: 581.60, size: 39.00 },
+                sala: { x: 1393.00, y: 854.00, size: 51.00 },
+                fila: { x: 1732.00, y: 859.00, size: 51.00 },
+                asiento: { x: 2132.00, y: 843.50, size: 56.00 },
+            };
+            
+            // Coordenadas ACTUALIZADAS para la IMAGEN FINAL GENERADA (ajustadas a la nueva resolución 1378x647)
+            // Hemos usado el punto de inicio del mapa de imagen más un pequeño ajuste vertical/horizontal
+            const FINAL_COORDS = {
+                // Basado en coords="813, 227" de la imagen 1378x647, con ajuste de posición y tamaño x2
+                venue: { x: 813 + 10, y: 227 + 5, rotate: -3, size: 37.00 * 2.5 }, 
+                
+                // Basado en coords="954, 311"
+                fecha: { x: 954 + 10, y: 311 + 5, rotate: 0, size: 39.00 * 2.5 }, 
+                
+                // Basado en coords="802, 461"
+                sala: { x: 802 + 5, y: 461 + 10, rotate: 0, size: 51.00 * 2.5 }, 
+                
+                // Basado en coords="995, 459"
+                fila: { x: 995 + 5, y: 459 + 10, rotate: 0, size: 51.00 * 2.5 }, 
+                
+                // Basado en coords="1229, 461"
+                asiento: { x: 1229 + 5, y: 461 + 10, rotate: 0, size: 56.00 * 2.5 },
             };
 
-            // Dimensiones de la imagen base para cálculos
-            const IMAGE_WIDTH = 2407.9745;
-            const IMAGE_HEIGHT = 1247.7159;
+
             
             // Populate dropdowns
             for (let i = 1; i <= 30; i++) {
@@ -259,16 +279,6 @@
             });
 
             function updateTicketPreview() {
-                if (!baseImage.naturalWidth || !baseImage.naturalHeight) {
-                    return;
-                }
-
-                const scaleX = baseImage.clientWidth / IMAGE_WIDTH;
-                const scaleY = baseImage.clientHeight / IMAGE_HEIGHT;
-
-                ticketOverlay.style.width = `${baseImage.clientWidth}px`;
-                ticketOverlay.style.height = `${baseImage.clientHeight}px`;
-
                 const venueValue = venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value;
                 const ticketData = {
                     venue: venueValue.toUpperCase(),
@@ -285,15 +295,28 @@
                 for (const key in ticketData) {
                     if (ticketData[key]) {
                         fieldsFilled++;
-                        const layout = TICKET_LAYOUT[key];
                         const textElement = document.createElement('div');
                         textElement.textContent = ticketData[key];
-                        textElement.className = `ticket-text ${key}`;
-                        textElement.style.left = `${layout.x * scaleX}px`;
-                        textElement.style.top = `${layout.y * scaleY}px`;
-                        textElement.style.transformOrigin = 'left top';
-                        textElement.style.transform = `rotate(${layout.rotate}deg)`;
-                        textElement.style.fontSize = `${layout.size * ((scaleX + scaleY) / 2)}px`;
+                        textElement.style.position = 'absolute';
+                        textElement.style.color = '#2e5950';
+                        textElement.style.fontFamily = 'Gazzetta-Custom, sans-serif';
+                        textElement.style.fontVariationSettings = `'wght' 400`;
+                        textElement.style.whiteSpace = 'nowrap';
+                        textElement.style.fontStyle = 'normal';
+                        
+                        // CÁLCULO DE POSICIÓN Y TAMAÑO EN UNIDADES RESPONSIVAS (VW, %) usando LIVE_COORDS
+                        const x = (LIVE_COORDS[key].x / ORIGINAL_IMAGE_WIDTH) * 100;
+                        const y = (LIVE_COORDS[key].y / ORIGINAL_IMAGE_HEIGHT) * 100;
+                        const size = (LIVE_COORDS[key].size / ORIGINAL_IMAGE_WIDTH) * 100; 
+
+                        textElement.style.left = `${x}%`;
+                        textElement.style.top = `${y}%`;
+                        textElement.style.fontSize = `${size}vw`;
+
+                        if (LIVE_COORDS[key].rotate) {
+                           textElement.style.transformOrigin = 'left top';
+                           textElement.style.transform = `rotate(${LIVE_COORDS[key].rotate}deg)`;
+                        }
 
                         ticketOverlay.appendChild(textElement);
                     }
@@ -324,57 +347,54 @@
             
             async function createTicketImage() {
                 const canvas = document.createElement('canvas');
-                // USAMOS EL ELEMENTO BASEIMAGE YA CARGADO EN EL DOM
-                const img = baseImage;
-                
+                const img = new Image(); // Usamos un nuevo objeto Image para asegurar el origen cruzado
+                img.crossOrigin = 'anonymous'; 
+
                 return new Promise((resolve, reject) => {
-                    // Verificamos que la imagen esté lista. Si no lo está, intentamos forzar un 'onload'
-                    if (img.complete && img.naturalHeight !== 0) {
-                        drawOnCanvas(img, canvas, resolve);
-                    } else {
-                        img.onload = () => drawOnCanvas(img, canvas, resolve);
-                        img.onerror = (e) => {
-                            console.error('Error al cargar la imagen base:', e);
-                            reject(new Error('No se pudo cargar la imagen base.'));
-                        };
-                    }
+                    img.onload = () => {
+                        // Usamos las dimensiones REALES de la imagen final
+                        const originalWidth = FINAL_IMAGE_WIDTH;
+                        const originalHeight = FINAL_IMAGE_HEIGHT;
+                        canvas.width = originalWidth;
+                        canvas.height = originalHeight;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        // Set text properties for final generation
+                        ctx.fillStyle = '#2e5950';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'top';
+
+                        // Usamos FINAL_COORDS para la generación
+                        const textElements = [
+                            { text: (venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value).toUpperCase(), x: FINAL_COORDS.venue.x, y: FINAL_COORDS.venue.y, rotate: FINAL_COORDS.venue.rotate, size: FINAL_COORDS.venue.size },
+                            { text: fechaSelect.value.toUpperCase().replace('OCT', 'OCTUBRE'), x: FINAL_COORDS.fecha.x, y: FINAL_COORDS.fecha.y, rotate: FINAL_COORDS.fecha.rotate, size: FINAL_COORDS.fecha.size },
+                            { text: salaSelect.value.toUpperCase(), x: FINAL_COORDS.sala.x, y: FINAL_COORDS.sala.y, rotate: FINAL_COORDS.sala.rotate, size: FINAL_COORDS.sala.size },
+                            { text: filaSelect.value.toUpperCase(), x: FINAL_COORDS.fila.x, y: FINAL_COORDS.fila.y, rotate: FINAL_COORDS.fila.rotate, size: FINAL_COORDS.fila.size },
+                            { text: asientoSelect.value.toUpperCase(), x: FINAL_COORDS.asiento.x, y: FINAL_COORDS.asiento.y, rotate: FINAL_COORDS.asiento.rotate, size: FINAL_COORDS.asiento.size },
+                        ];
+
+                        textElements.forEach(item => {
+                            // Aplicar la fuente personalizada y el tamaño
+                            ctx.font = `${item.size}px "Gazzetta-Custom", sans-serif`; 
+                            ctx.save();
+                            ctx.translate(item.x, item.y);
+                            if (item.rotate) {
+                                ctx.rotate(item.rotate * Math.PI / 180);
+                            }
+                            ctx.fillText(item.text, 0, 0);
+                            ctx.restore();
+                        });
+
+                        resolve(canvas.toDataURL('image/jpeg', 0.9)); // Convert to JPG with 90% quality
+                    };
+                    img.onerror = (e) => {
+                        console.error('Error al cargar la imagen base para Canvas:', e);
+                        reject(new Error('No se pudo cargar la imagen base.'));
+                    };
+                    // Usamos la URL que tiene las dimensiones 1378x647
+                    img.src = 'https://ts12swiftieschiapas.es/boletovacio.webp'; 
                 });
-            }
-
-            function drawOnCanvas(img, canvas, resolve) {
-                const originalWidth = img.naturalWidth;
-                const originalHeight = img.naturalHeight;
-                canvas.width = originalWidth;
-                canvas.height = originalHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                
-                // Set text properties for final generation
-                ctx.fillStyle = '#2e5950';
-                ctx.textAlign = 'left';
-                ctx.textBaseline = 'top';
-
-                const textElements = [
-                    { text: (venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value).toUpperCase(), ...TICKET_LAYOUT.venue },
-                    { text: fechaSelect.value.toUpperCase().replace('OCT', 'OCTUBRE'), ...TICKET_LAYOUT.fecha },
-                    { text: salaSelect.value.toUpperCase(), ...TICKET_LAYOUT.sala },
-                    { text: filaSelect.value.toUpperCase(), ...TICKET_LAYOUT.fila },
-                    { text: asientoSelect.value.toUpperCase(), ...TICKET_LAYOUT.asiento },
-                ];
-
-                textElements.forEach(item => {
-                    // Aplicar la fuente personalizada y el tamaño
-                    ctx.font = `600 ${item.size}px "Gazzetta-Custom", sans-serif`; // Usamos sans-serif como fallback
-                    ctx.save();
-                    ctx.translate(item.x, item.y);
-                    if (item.rotate) {
-                        ctx.rotate(item.rotate * Math.PI / 180);
-                    }
-                    ctx.fillText(item.text, 0, 0);
-                    ctx.restore();
-                });
-
-                resolve(canvas.toDataURL('image/jpeg', 0.9)); // Convert to JPG with 90% quality
             }
 
             // Generate button click
@@ -423,14 +443,8 @@
             });
 
             // Initial checks
-            if (baseImage.complete && baseImage.naturalWidth) {
-                updateTicketPreview();
-            } else {
-                baseImage.addEventListener('load', updateTicketPreview);
-            }
+            updateTicketPreview();
             checkForm();
-
-            window.addEventListener('resize', updateTicketPreview);
         });
     </script>
 </body>
