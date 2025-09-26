@@ -5,22 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Boleto Conmemorativo</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://use.typekit.net">
-    <link rel="stylesheet" href="https://use.typekit.net/ynd8vkt.css">
+    <!-- Enlace a la hoja de estilos de Adobe Fonts para la fuente Gazzetta -->
+    <link rel="stylesheet" href="https://use.typekit.net/xza4qiy.css">
     <style>
-        
         body {
-            font-family: 'gazzetta-variable', 'Gazzetta', serif !important;
+            font-family: 'gazzetta-variable', sans-serif;
+            font-variation-settings: 'wght' 400;
             background-color: #80D8C2; /* Color verde esmeralda pastel */
             color: #000;
         }
 
-        button, input, select, textarea {
-            font-family: 'gazzetta-variable', 'Gazzetta', serif;
-        }
-
+        /* Usamos 'gazzetta-variable' para que el título use la fuente correcta */
         .gazzetta-medium-slanted {
-            font-family: 'gazzetta-variable', 'Gazzetta', serif;
+            font-family: 'gazzetta-variable', sans-serif;
+            font-variation-settings: 'wght' 400; /* Aplica el peso de la fuente */
         }
 
         .ticket-container {
@@ -56,11 +54,10 @@
             color: #2e5950; /* Color verde más oscuro */
             white-space: nowrap;
             font-style: italic;
-            font-family: 'gazzetta-variable', 'Gazzetta', serif;
-            font-size: 1.2rem;
-            transform-origin: 0 0;
+            font-family: 'gazzetta-variable', sans-serif;
+            font-variation-settings: 'wght' 400;
         }
-
+        
         #previewContainer {
             position: fixed;
             top: 0;
@@ -103,7 +100,7 @@
 
     <div class="w-full max-w-2xl bg-black bg-opacity-50 p-6 rounded-lg shadow-xl mb-8">
         <div class="ticket-container">
-            <img id="baseImage" src="https://i.ibb.co/232Vhy8n/Artboard-2.webp" alt="Boleto base" class="w-full h-auto rounded-lg">
+            <img id="baseImage" src="https://ts12swiftieschiapas.es/ticketgents12/boletovacio.webp" alt="Boleto base" class="w-full h-auto rounded-lg">
             <div id="ticketOverlay"></div>
         </div>
 
@@ -185,11 +182,23 @@
             const previewButtons = document.getElementById('previewButtons');
             const downloadBtn = document.getElementById('downloadBtn');
             const closePreviewBtn = document.getElementById('closePreviewBtn');
-
+            
             let currentDownloadURL = '';
             let fieldsFilled = 0;
-            let fieldElements = [];
 
+            // Coordenadas FIJAS para la imagen final y la vista en tiempo real
+            const FINAL_AND_LIVE_COORDS = {
+                venue: { x: 1410.00, y: 407.00, rotate: -3, size: 37.00 },
+                fecha: { x: 1668.00, y: 581.60, size: 39.00 },
+                sala: { x: 1393.00, y: 854.00, size: 51.00 },
+                fila: { x: 1732.00, y: 859.00, size: 51.00 },
+                asiento: { x: 2132.00, y: 843.50, size: 56.00 },
+            };
+
+            // Dimensiones de la imagen base para cálculos
+            const IMAGE_WIDTH = 2407.9745;
+            const IMAGE_HEIGHT = 1247.7159;
+            
             // Populate dropdowns
             for (let i = 1; i <= 30; i++) {
                 const option = document.createElement('option');
@@ -235,55 +244,53 @@
             function updateTicketPreview() {
                 const venueValue = venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value;
                 const ticketData = {
-                    venue: venueValue ? venueValue.toUpperCase() : '',
-                    fecha: fechaSelect.value ? fechaSelect.value.toUpperCase().replace('OCT', 'OCTUBRE') : '',
-                    sala: salaSelect.value ? salaSelect.value.toUpperCase() : '',
-                    fila: filaSelect.value ? filaSelect.value.toUpperCase() : '',
-                    asiento: asientoSelect.value ? asientoSelect.value.toUpperCase() : '',
+                    venue: venueValue.toUpperCase(),
+                    fecha: fechaSelect.value.toUpperCase().replace('OCT', 'OCTUBRE'),
+                    sala: salaSelect.value.toUpperCase(),
+                    fila: filaSelect.value.toUpperCase(),
+                    asiento: asientoSelect.value.toUpperCase(),
                 };
 
                 // Clear previous text
                 ticketOverlay.innerHTML = '';
-                
-                // Get current image dimensions
-                const imgWidth = baseImage.width;
-                const imgHeight = baseImage.height;
-
-                // Positions for the real-time preview (as a percentage of the image dimensions)
-                const textPositions = {
-                    venue: { x: 822, y: 251, rotate: -3 },
-                    fecha: { x: 957, y: 335.6 },
-                    sala: { x: 799, y: 491 },
-                    fila: { x: 988, y: 490 },
-                    asiento: { x: 1226, y: 495.5 },
-                };
+                fieldsFilled = 0;
 
                 for (const key in ticketData) {
                     if (ticketData[key]) {
+                        fieldsFilled++;
                         const textElement = document.createElement('div');
                         textElement.textContent = ticketData[key];
-                        textElement.classList.add('ticket-text');
-
-                        const pos = textPositions[key];
-                        textElement.style.left = `${(pos.x / 2407.9745) * 100}%`;
-                        textElement.style.top = `${(pos.y / 1247.7159) * 100}%`;
+                        textElement.style.position = 'absolute';
+                        textElement.style.color = '#2e5950';
+                        textElement.style.fontFamily = 'gazzetta-variable, sans-serif';
+                        textElement.style.fontVariationSettings = `'wght' 400`;
+                        textElement.style.whiteSpace = 'nowrap';
+                        textElement.style.fontStyle = 'normal';
                         
-                        if (pos.rotate) {
-                            textElement.style.transform = `rotate(${pos.rotate}deg)`;
+                        // Posiciones en porcentajes para la vista en tiempo real (adaptable)
+                        const x = (FINAL_AND_LIVE_COORDS[key].x / IMAGE_WIDTH) * 100;
+                        const y = (FINAL_AND_LIVE_COORDS[key].y / IMAGE_HEIGHT) * 100;
+                        const size = (FINAL_AND_LIVE_COORDS[key].size / IMAGE_WIDTH) * 100;
+
+                        textElement.style.left = `${x}%`;
+                        textElement.style.top = `${y}%`;
+                        textElement.style.fontSize = `${size}vw`;
+
+                        if (FINAL_AND_LIVE_COORDS[key].rotate) {
+                           textElement.style.transform = `rotate(${FINAL_AND_LIVE_COORDS[key].rotate}deg)`;
                         }
 
                         ticketOverlay.appendChild(textElement);
                     }
                 }
-                
-                const isFormEmpty = !venueValue && !fechaSelect.value && !salaSelect.value && !filaSelect.value && !asientoSelect.value;
-                if (!isFormEmpty) {
+
+                if (fieldsFilled > 0) {
                     baseImage.classList.add('shimmer');
                 } else {
                     baseImage.classList.remove('shimmer');
                 }
             }
-
+            
             // Enable/disable generate button
             function checkForm() {
                 const venueValue = venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value;
@@ -315,7 +322,7 @@
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                         
                         // Set text properties
-                        ctx.font = `italic 600 45px "gazzetta-variable"`;
+                        ctx.font = `italic bold 45px Gazzetta-Variable, sans-serif`;
                         ctx.fillStyle = '#2e5950';
                         ctx.textAlign = 'left';
 
