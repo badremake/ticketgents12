@@ -344,6 +344,7 @@
 
                         textElements.forEach(item => {
                             // Aplicar la fuente personalizada y el tamaño
+                            // Aseguramos que el nombre de la fuente sea el mismo que el @font-face
                             ctx.font = `${item.size}px 'Gazzetta-Custom'`;
                             ctx.save();
                             ctx.translate(item.x, item.y);
@@ -360,7 +361,8 @@
                         console.error('Error al cargar la imagen base:', e);
                         reject(new Error('No se pudo cargar la imagen base.'));
                     };
-                    img.src = "https://i.ibb.co/232Vhy8n/Artboard-2.webp";
+                    // Usamos la misma fuente que la vista en vivo para consistencia y mitigar CORS
+                    img.src = baseImage.src; 
                 });
             }
 
@@ -386,7 +388,7 @@
 
                 } catch (error) {
                     console.error('Error al generar el boleto:', error.message);
-                    previewTitle.textContent = 'Error';
+                    previewTitle.textContent = 'Error: No se pudo generar el boleto.';
                     loadingSpinner.classList.add('hidden');
                 }
             });
