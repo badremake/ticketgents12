@@ -5,17 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Boleto Conmemorativo</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://use.typekit.net">
+    <link rel="stylesheet" href="https://use.typekit.net/ynd8vkt.css">
     <style>
-        @import url('https://fonts.adobe.com/fonts/gazzetta-variable?vf-instance=Italic&vf-font-size=700&vf-font=Gazzetta-Italic');
         
         body {
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            font-family: 'gazzetta-variable', 'Gazzetta', serif !important;
             background-color: #80D8C2; /* Color verde esmeralda pastel */
             color: #000;
         }
 
+        button, input, select, textarea {
+            font-family: 'gazzetta-variable', 'Gazzetta', serif;
+        }
+
         .gazzetta-medium-slanted {
-            font-family: 'Gazzetta', cursive;
+            font-family: 'gazzetta-variable', 'Gazzetta', serif;
         }
 
         .ticket-container {
@@ -51,7 +56,7 @@
             color: #2e5950; /* Color verde más oscuro */
             white-space: nowrap;
             font-style: italic;
-            font-family: 'Gabarito', sans-serif;
+            font-family: 'gazzetta-variable', 'Gazzetta', serif;
             font-size: 1.2rem;
             transform-origin: 0 0;
         }
@@ -310,7 +315,7 @@
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                         
                         // Set text properties
-                        ctx.font = `italic bold 45px Gabarito, sans-serif`;
+                        ctx.font = `italic 600 45px "gazzetta-variable"`;
                         ctx.fillStyle = '#2e5950';
                         ctx.textAlign = 'left';
 
