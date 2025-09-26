@@ -40,6 +40,13 @@
         #baseImage {
             width: 100%;
             height: auto;
+            display: block;
+        }
+
+        #ticketOverlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
         }
         
         .shimmer {
@@ -196,13 +203,13 @@
             let currentDownloadURL = '';
             let fieldsFilled = 0;
 
-            // Coordenadas FIJAS para la imagen final y la vista en tiempo real
-            const FINAL_AND_LIVE_COORDS = {
-                venue: { x: 1410.00, y: 407.00, rotate: -3, size: 37.00 },
-                fecha: { x: 1668.00, y: 581.60, size: 39.00 },
-                sala: { x: 1393.00, y: 854.00, size: 51.00 },
-                fila: { x: 1732.00, y: 859.00, size: 51.00 },
-                asiento: { x: 2132.00, y: 843.50, size: 56.00 },
+            // Coordenadas fijas de la imagen final (en pixeles relativos al archivo base)
+            const TICKET_LAYOUT = {
+                venue: { x: 1410.0, y: 407.0, rotate: -3, size: 45.0 },
+                fecha: { x: 1668.0, y: 581.6, rotate: 0, size: 45.0 },
+                sala: { x: 1393.0, y: 854.0, rotate: 0, size: 55.0 },
+                fila: { x: 1732.0, y: 859.0, rotate: 0, size: 55.0 },
+                asiento: { x: 2132.0, y: 843.5, rotate: 0, size: 60.0 },
             };
 
             // Dimensiones de la imagen base para cálculos
@@ -252,6 +259,16 @@
             });
 
             function updateTicketPreview() {
+                if (!baseImage.naturalWidth || !baseImage.naturalHeight) {
+                    return;
+                }
+
+                const scaleX = baseImage.clientWidth / IMAGE_WIDTH;
+                const scaleY = baseImage.clientHeight / IMAGE_HEIGHT;
+
+                ticketOverlay.style.width = `${baseImage.clientWidth}px`;
+                ticketOverlay.style.height = `${baseImage.clientHeight}px`;
+
                 const venueValue = venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value;
                 const ticketData = {
                     venue: venueValue.toUpperCase(),
@@ -268,28 +285,15 @@
                 for (const key in ticketData) {
                     if (ticketData[key]) {
                         fieldsFilled++;
+                        const layout = TICKET_LAYOUT[key];
                         const textElement = document.createElement('div');
                         textElement.textContent = ticketData[key];
-                        textElement.style.position = 'absolute';
-                        textElement.style.color = '#2e5950';
-                        textElement.style.fontFamily = 'Gazzetta-Custom, sans-serif';
-                        textElement.style.fontVariationSettings = `'wght' 400`;
-                        textElement.style.whiteSpace = 'nowrap';
-                        textElement.style.fontStyle = 'normal';
-                        
-                        // Posiciones en porcentajes para la vista en tiempo real (adaptable)
-                        const x = (FINAL_AND_LIVE_COORDS[key].x / IMAGE_WIDTH) * 100;
-                        const y = (FINAL_AND_LIVE_COORDS[key].y / IMAGE_HEIGHT) * 100;
-                        const size = (FINAL_AND_LIVE_COORDS[key].size / IMAGE_WIDTH) * 100;
-
-                        textElement.style.left = `${x}%`;
-                        textElement.style.top = `${y}%`;
-                        textElement.style.fontSize = `${size}vw`;
-
-                        if (FINAL_AND_LIVE_COORDS[key].rotate) {
-                           textElement.style.transformOrigin = 'left top';
-                           textElement.style.transform = `rotate(${FINAL_AND_LIVE_COORDS[key].rotate}deg)`;
-                        }
+                        textElement.className = `ticket-text ${key}`;
+                        textElement.style.left = `${layout.x * scaleX}px`;
+                        textElement.style.top = `${layout.y * scaleY}px`;
+                        textElement.style.transformOrigin = 'left top';
+                        textElement.style.transform = `rotate(${layout.rotate}deg)`;
+                        textElement.style.fontSize = `${layout.size * ((scaleX + scaleY) / 2)}px`;
 
                         ticketOverlay.appendChild(textElement);
                     }
@@ -351,16 +355,16 @@
                 ctx.textBaseline = 'top';
 
                 const textElements = [
-                    { text: (venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value).toUpperCase(), x: FINAL_AND_LIVE_COORDS.venue.x, y: FINAL_AND_LIVE_COORDS.venue.y, rotate: FINAL_AND_LIVE_COORDS.venue.rotate, size: FINAL_AND_LIVE_COORDS.venue.size },
-                    { text: fechaSelect.value.toUpperCase().replace('OCT', 'OCTUBRE'), x: FINAL_AND_LIVE_COORDS.fecha.x, y: FINAL_AND_LIVE_COORDS.fecha.y, rotate: 0, size: FINAL_AND_LIVE_COORDS.fecha.size },
-                    { text: salaSelect.value.toUpperCase(), x: FINAL_AND_LIVE_COORDS.sala.x, y: FINAL_AND_LIVE_COORDS.sala.y, rotate: 0, size: FINAL_AND_LIVE_COORDS.sala.size },
-                    { text: filaSelect.value.toUpperCase(), x: FINAL_AND_LIVE_COORDS.fila.x, y: FINAL_AND_LIVE_COORDS.fila.y, rotate: 0, size: FINAL_AND_LIVE_COORDS.fila.size },
-                    { text: asientoSelect.value.toUpperCase(), x: FINAL_AND_LIVE_COORDS.asiento.x, y: FINAL_AND_LIVE_COORDS.asiento.y, rotate: 0, size: FINAL_AND_LIVE_COORDS.asiento.size },
+                    { text: (venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value).toUpperCase(), ...TICKET_LAYOUT.venue },
+                    { text: fechaSelect.value.toUpperCase().replace('OCT', 'OCTUBRE'), ...TICKET_LAYOUT.fecha },
+                    { text: salaSelect.value.toUpperCase(), ...TICKET_LAYOUT.sala },
+                    { text: filaSelect.value.toUpperCase(), ...TICKET_LAYOUT.fila },
+                    { text: asientoSelect.value.toUpperCase(), ...TICKET_LAYOUT.asiento },
                 ];
 
                 textElements.forEach(item => {
                     // Aplicar la fuente personalizada y el tamaño
-                    ctx.font = `${item.size}px "Gazzetta-Custom", sans-serif`; // Usamos sans-serif como fallback
+                    ctx.font = `600 ${item.size}px "Gazzetta-Custom", sans-serif`; // Usamos sans-serif como fallback
                     ctx.save();
                     ctx.translate(item.x, item.y);
                     if (item.rotate) {
@@ -419,8 +423,14 @@
             });
 
             // Initial checks
-            updateTicketPreview();
+            if (baseImage.complete && baseImage.naturalWidth) {
+                updateTicketPreview();
+            } else {
+                baseImage.addEventListener('load', updateTicketPreview);
+            }
             checkForm();
+
+            window.addEventListener('resize', updateTicketPreview);
         });
     </script>
 </body>
