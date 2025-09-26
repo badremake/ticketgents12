@@ -64,7 +64,7 @@
             white-space: nowrap;
             font-style: normal;
             font-family: 'Gazzetta-Custom', sans-serif;
-            font-size: 300px;
+            font-size: 220px;
             font-variation-settings: 'wght' 230;
             transform-origin: left top; 
             /* Las coordenadas se aplicarán directamente en JavaScript para precisión */
@@ -222,20 +222,21 @@
             const FINAL_FONT_SCALE = 2.35; // Ajusta manualmente este factor para cambiar el tamaño final del texto en la imagen
             const LIVE_FONT_SCALE = 0.92; // Ajusta manualmente este factor si quieres que la vista previa sea más grande o más pequeña
             const FINAL_COORDS = {
-                // Basado en coords="813, 227" de la imagen 1378x647, con ajuste de posición y tamaño x2
-                venue: { x: 813 + 10, y: 227 + 5, rotate: -3, size: 37.00 * FINAL_FONT_SCALE },
+// Basado en coords="813, 227" de la imagen 1378x647, con ajuste de posición y tamaño x2
+venue:   { x: 813 + 10, y: 227 - 15, rotate: -3, size: 37.00 * FINAL_FONT_SCALE },
 
-                // Basado en coords="954, 311"
-                fecha: { x: 954 + 10, y: 311 + 5, rotate: 0, size: 39.00 * FINAL_FONT_SCALE },
+// Basado en coords="954, 311"
+fecha:   { x: 954 + 10, y: 311 - 15, rotate: 0, size: 39.00 * FINAL_FONT_SCALE },
 
-                // Basado en coords="802, 461"
-                sala: { x: 802 + 5, y: 461 + 10, rotate: 0, size: 51.00 * FINAL_FONT_SCALE },
+// Basado en coords="802, 461"
+sala:    { x: 802 + 5,  y: 461 - 15, rotate: 0, size: 51.00 * FINAL_FONT_SCALE },
 
-                // Basado en coords="995, 459"
-                fila: { x: 995 + 5, y: 459 + 10, rotate: 0, size: 51.00 * FINAL_FONT_SCALE },
+// Basado en coords="995, 459"
+fila:    { x: 995 + 5,  y: 459 - 15, rotate: 0, size: 51.00 * FINAL_FONT_SCALE },
 
-                // Basado en coords="1229, 461"
-                asiento: { x: 1229 + 5, y: 461 + 10, rotate: 0, size: 56.00 * FINAL_FONT_SCALE },
+// Basado en coords="1229, 461"
+asiento: { x: 1229 + 5, y: 461 - 15, rotate: 0, size: 56.00 * FINAL_FONT_SCALE },
+
             };
 
 
