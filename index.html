@@ -22,8 +22,6 @@
             font-variation-settings: 'wght' 400;
             background-color: #80D8C2; /* Color verde esmeralda pastel */
             color: #000;
-            font-size: 18px;
-            line-height: 1.6;
         }
 
         /* Usamos 'Gazzetta-Custom' para que el título use la fuente correcta */
@@ -64,7 +62,7 @@
             font-weight: bold;
             color: #2e5950; /* Color verde más oscuro */
             white-space: nowrap;
-            font-style: normal; /* Ahora usamos font-style: normal y dejamos que el archivo .otf maneje la inclinación */
+            font-style: normal;
             font-family: 'Gazzetta-Custom', sans-serif;
             font-variation-settings: 'wght' 400;
         }
@@ -105,13 +103,14 @@
 
     </style>
 </head>
-<body class="bg-emerald-200 text-black min-h-screen flex flex-col items-center p-4 text-lg md:text-xl">
+<body class="bg-emerald-200 text-black min-h-screen flex flex-col items-center p-4">
 
-    <h1 class="text-4xl md:text-6xl gazzetta-medium-slanted text-center my-8">TS12 RELEASE PARTY TICKET</h1>
+    <h1 class="text-3xl md:text-5xl gazzetta-medium-slanted text-center my-8">TS12 RELEASE PARTY TICKET </h1>
 
     <div class="w-full max-w-2xl bg-black bg-opacity-50 p-6 rounded-lg shadow-xl mb-8">
         <div class="ticket-container">
-            <img id="baseImage" src="/boletovacio.webp" alt="Boleto base" class="w-full h-auto rounded-lg">
+            <!-- RUTA DE IMAGEN ALINEADA CON EL CÓDIGO LOCAL DEL USUARIO -->
+            <img id="baseImage" src="/boletovacio.webp" alt="Boleto base" class="w-full h-auto rounded-lg" crossorigin="anonymous">
             <div id="ticketOverlay"></div>
         </div>
 
@@ -274,7 +273,7 @@
                         textElement.style.position = 'absolute';
                         textElement.style.color = '#2e5950';
                         textElement.style.fontFamily = 'Gazzetta-Custom, sans-serif';
-                        textElement.style.fontVariationSettings = "'wght' 400";
+                        textElement.style.fontVariationSettings = `'wght' 400`;
                         textElement.style.whiteSpace = 'nowrap';
                         textElement.style.fontStyle = 'normal';
                         
@@ -320,61 +319,58 @@
             }
             
             async function createTicketImage() {
-                if (document.fonts && document.fonts.ready) {
-                    await document.fonts.ready;
-                    const fontLoads = Object.values(FINAL_AND_LIVE_COORDS)
-                        .filter(coord => coord.size)
-                        .map(coord => document.fonts.load(`400 ${coord.size}px 'Gazzetta-Custom'`));
-                    await Promise.allSettled(fontLoads);
-                }
                 const canvas = document.createElement('canvas');
-                const img = new Image();
-                img.crossOrigin = 'anonymous'; // Important for CORS if using external image URLs
+                // USAMOS EL ELEMENTO BASEIMAGE YA CARGADO EN EL DOM
+                const img = baseImage;
                 
                 return new Promise((resolve, reject) => {
-                    img.onload = () => {
-                        const originalWidth = img.width;
-                        const originalHeight = img.height;
-                        canvas.width = originalWidth;
-                        canvas.height = originalHeight;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                        // Set text properties for final generation
-                        ctx.fillStyle = '#2e5950';
-                        ctx.textAlign = 'left';
-                        ctx.textBaseline = 'top';
-
-                        const textElements = [
-                            { text: (venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value).toUpperCase(), x: FINAL_AND_LIVE_COORDS.venue.x, y: FINAL_AND_LIVE_COORDS.venue.y, rotate: FINAL_AND_LIVE_COORDS.venue.rotate, size: FINAL_AND_LIVE_COORDS.venue.size },
-                            { text: fechaSelect.value.toUpperCase().replace('OCT', 'OCTUBRE'), x: FINAL_AND_LIVE_COORDS.fecha.x, y: FINAL_AND_LIVE_COORDS.fecha.y, rotate: 0, size: FINAL_AND_LIVE_COORDS.fecha.size },
-                            { text: salaSelect.value.toUpperCase(), x: FINAL_AND_LIVE_COORDS.sala.x, y: FINAL_AND_LIVE_COORDS.sala.y, rotate: 0, size: FINAL_AND_LIVE_COORDS.sala.size },
-                            { text: filaSelect.value.toUpperCase(), x: FINAL_AND_LIVE_COORDS.fila.x, y: FINAL_AND_LIVE_COORDS.fila.y, rotate: 0, size: FINAL_AND_LIVE_COORDS.fila.size },
-                            { text: asientoSelect.value.toUpperCase(), x: FINAL_AND_LIVE_COORDS.asiento.x, y: FINAL_AND_LIVE_COORDS.asiento.y, rotate: 0, size: FINAL_AND_LIVE_COORDS.asiento.size },
-                        ];
-
-                        textElements.forEach(item => {
-                            // Aplicar la fuente personalizada y el tamaño
-                            // Aseguramos que el nombre de la fuente sea el mismo que el @font-face
-                            ctx.font = `${item.size}px "Gazzetta-Custom", sans-serif`;
-                            ctx.save();
-                            ctx.translate(item.x, item.y);
-                            if (item.rotate) {
-                                ctx.rotate(item.rotate * Math.PI / 180);
-                            }
-                            ctx.fillText(item.text, 0, 0);
-                            ctx.restore();
-                        });
-
-                        resolve(canvas.toDataURL('image/jpeg', 0.9)); // Convert to JPG with 90% quality
-                    };
-                    img.onerror = (e) => {
-                        console.error('Error al cargar la imagen base:', e);
-                        reject(new Error('No se pudo cargar la imagen base.'));
-                    };
-                    // Usamos la misma fuente que la vista en vivo para consistencia y mitigar CORS
-                    img.src = baseImage.src; 
+                    // Verificamos que la imagen esté lista. Si no lo está, intentamos forzar un 'onload'
+                    if (img.complete && img.naturalHeight !== 0) {
+                        drawOnCanvas(img, canvas, resolve);
+                    } else {
+                        img.onload = () => drawOnCanvas(img, canvas, resolve);
+                        img.onerror = (e) => {
+                            console.error('Error al cargar la imagen base:', e);
+                            reject(new Error('No se pudo cargar la imagen base.'));
+                        };
+                    }
                 });
+            }
+
+            function drawOnCanvas(img, canvas, resolve) {
+                const originalWidth = img.naturalWidth;
+                const originalHeight = img.naturalHeight;
+                canvas.width = originalWidth;
+                canvas.height = originalHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                // Set text properties for final generation
+                ctx.fillStyle = '#2e5950';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+
+                const textElements = [
+                    { text: (venueSelect.value === 'Otro' ? otherVenueInput.value : venueSelect.value).toUpperCase(), x: FINAL_AND_LIVE_COORDS.venue.x, y: FINAL_AND_LIVE_COORDS.venue.y, rotate: FINAL_AND_LIVE_COORDS.venue.rotate, size: FINAL_AND_LIVE_COORDS.venue.size },
+                    { text: fechaSelect.value.toUpperCase().replace('OCT', 'OCTUBRE'), x: FINAL_AND_LIVE_COORDS.fecha.x, y: FINAL_AND_LIVE_COORDS.fecha.y, rotate: 0, size: FINAL_AND_LIVE_COORDS.fecha.size },
+                    { text: salaSelect.value.toUpperCase(), x: FINAL_AND_LIVE_COORDS.sala.x, y: FINAL_AND_LIVE_COORDS.sala.y, rotate: 0, size: FINAL_AND_LIVE_COORDS.sala.size },
+                    { text: filaSelect.value.toUpperCase(), x: FINAL_AND_LIVE_COORDS.fila.x, y: FINAL_AND_LIVE_COORDS.fila.y, rotate: 0, size: FINAL_AND_LIVE_COORDS.fila.size },
+                    { text: asientoSelect.value.toUpperCase(), x: FINAL_AND_LIVE_COORDS.asiento.x, y: FINAL_AND_LIVE_COORDS.asiento.y, rotate: 0, size: FINAL_AND_LIVE_COORDS.asiento.size },
+                ];
+
+                textElements.forEach(item => {
+                    // Aplicar la fuente personalizada y el tamaño
+                    ctx.font = `${item.size}px "Gazzetta-Custom", sans-serif`; // Usamos sans-serif como fallback
+                    ctx.save();
+                    ctx.translate(item.x, item.y);
+                    if (item.rotate) {
+                        ctx.rotate(item.rotate * Math.PI / 180);
+                    }
+                    ctx.fillText(item.text, 0, 0);
+                    ctx.restore();
+                });
+
+                resolve(canvas.toDataURL('image/jpeg', 0.9)); // Convert to JPG with 90% quality
             }
 
             // Generate button click
